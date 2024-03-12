@@ -1,4 +1,4 @@
-# Snakemake pipeline for the effector protein prediction
+# Snakemake pipeline for effector protein prediction
 This pipeline will predict the effector proteins in a whole genome sequence in following steps:
 
 1. Provide the genome assembly filename (if the snakemake file and the assembly file are in different folder then mention the filepath along with the assembly filename)
