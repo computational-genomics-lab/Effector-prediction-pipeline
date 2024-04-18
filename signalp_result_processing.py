@@ -3,63 +3,62 @@ import pandas as pd
 import sys
 import csv
 from  pyfaidx import Fasta
+#command line a kotogulo argumnets pass kora holo
+n=len(sys.argv)
+#print("total no of arguments passed :", n)
 
-"""
-This script processes data from a SignalP analysis and retrieves sequences from corresponding protein files.
-"""
+#print("\nName of the python script", sys.argv[0])
 
-# Retrieve the total number of command-line arguments passed
-n = len(sys.argv)
+#search for corresponding protein file with ending of _translated.fna
+#arr_txt = [x for x in os.listdir() if x.endswith("_translated.fna")]
 
-# Retrieve the basename of the Python script
-# print("Name of the python script", sys.argv[0])
+data=[]
+data1=[]
 
-# Search for corresponding protein file with the ending of _translated.fna
-# arr_txt = [x for x in os.listdir() if x.endswith("_translated.fna")]
+#take the basename without extension .signalp5
+basename= (os.path.splitext(sys.argv[1])[0])
 
-data = []
-data1 = []
+#1st argument e je signalp file ta deoa holo seta open kore read kora holo; then ID, Prediction coloumn duto dia dictionary create kora holo jekhane ID key ar Prediction value
+with open(sys.argv[1],"r") as f:
+	next(f)
+	signalp_file=pd.read_csv(f,header=0,sep="\t")
+	#print(signalp_file.head())
+	
+	ID=(signalp_file.loc[:,'# ID'])
+	Prediction=(signalp_file.loc[:,'Prediction'])
+	#print(ID)
+	mydict=dict(zip(ID,Prediction))
+	for ID,Prediction in mydict.items():
+		if Prediction == 'SP(Sec/SPI)':
+			lab=[]
+			lab=[ID]
+			data.append(lab)
+#making the output csv name as the input file name without extension
+outputFileName= basename + ".csv"
+with open(outputFileName,'w') as f:
+	writer=csv.writer(f)
+	
+	#write the data
+	writer.writerows(data)
+#current work directory te file gulo jader end '_translated.fna' dia end sei file gulo neoa; singnalp file r corresponding protein file theke
+#signal peptide sequence gulo retrieve kora
 
-# Extract the basename without the extension .signalp5 from the first argument
-basename = (os.path.splitext(sys.argv[1])[0])
-
-# Open and read the SignalP file specified in the first argument,
-# create a dictionary with ID as key and Prediction as value
-with open(sys.argv[1], "r") as f:
-    next(f)
-    signalp_file = pd.read_csv(f, header=0, sep="\t")
-
-    ID = (signalp_file.loc[:, '# ID'])
-    Prediction = (signalp_file.loc[:, 'Prediction'])
-
-    mydict = dict(zip(ID, Prediction))
-    for ID, Prediction in mydict.items():
-        if Prediction == 'SP(Sec/SPI)':
-            lab = [ID]
-            data.append(lab)
-
-# Set the output CSV filename as the input filename without extension
-outputFileName = basename + ".csv"
-with open(outputFileName, 'w') as f:
-    writer = csv.writer(f)
-
-    # Write the data
-    writer.writerows(data)
-
-# Retrieve files whose names end with '_translated.fna' in the current working directory
-arr_txt = [x for x in os.listdir() if x.endswith('_translated.fna')]
-for i in arr_txt:
-    b = (os.path.splitext(i)[0])
-
-    # Check if the basename with '_summary' matches the previously extracted basename
-    b1 = b + "_summary"
-    if b1 == basename:
-        genes = Fasta(i)
-
-new_fasta = []
+arr_txt= [ x for x in os.listdir() if x.endswith('_translated.fna')]
+for i in arr_txt :
+	b=(os.path.splitext(i)[0])
+	#print(b)
+	b1=b + "_summary"
+	#print(b1)
+	if b1==basename:
+		genes=Fasta(i)
+		#print(genes.keys())
+new_fasta=[]
 with open(outputFileName) as csv_file:
-    for row in csv_file:
-        new_fasta.append(">%s\n%s" % (row.strip("\n"), (genes[row.strip("\n")])))
-output = basename + '.fa'
-with open(output, 'w') as f:
-    f.write('\n'.join(new_fasta))
+	#csv_reader=csv.reader(csv_file,delimiter=',')
+	for row in csv_file:
+		#print(row)
+		#print(">%s\n%s" % (row.strip("\n"),(genes[row.strip("\n")])))
+		new_fasta.append(">%s\n%s" % (row.strip("\n"),(genes[row.strip("\n")])))
+output=basename + '.fa'
+with open(output,'w') as f:
+	f.write('\n'.join(new_fasta))
