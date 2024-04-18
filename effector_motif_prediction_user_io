@@ -1,0 +1,112 @@
+# Snakemake pipeline for the prediction of effector proteins from a whole genome sequence
+# Load the configuration from the config file
+configfile: "io_motif_config.yaml"
+rule all:
+    input:
+        config["output_files"]
+        
+# Prediction of ORF in the given genome assembly
+rule ORF_pred:
+# Provide the genome assembly filename (if the snakemake file and the assembly file are in different folder then mention the filepath along with the assembly filename)
+    input:
+        config["input_file"]
+    output:
+        'pred.orf',
+# ORF of nucleotides sequences between START and STOP codons will be found
+    shell:
+        "getorf -sequence {input} -minsize 150 -maxsize 1500 -find 3 -outseq {output}"
+#remove space by _ in 'pred.orf' file headers
+rule space_removal:    
+    input:
+        "pred.orf",
+         processing_script="/home/sutripa/effector_prediction_pipeline-main/space_remove.sh"
+    output:
+        "pred_mod.orf"
+    shell:
+        "sh {input.processing_script} "
+# Translation of nucleic acid sequences of the predicted ORF in first frame, forward direction
+rule translate:
+    input:
+        'pred_mod.orf',
+    output:
+        'seq_translated.fna',
+    shell:
+        "transeq -sequence {input} -frame 1 -outseq {output}"
+# Prediction of the presence of signal peptides in the translated sequences
+rule signal prediction:
+    input:
+        "seq_translated.fna"
+    output:
+        "seq_translated_summary.signalp5",
+    shell:
+        "signalp5 -fasta {input} -gff3"
+# Extraction of the sequence Ids and the corresponding sequences with predicted signal peptides 
+rule signalP process:
+    input:
+        sig="seq_translated_summary.signalp5",
+    output:
+        "seq_translated_summary.fa"
+    shell:
+        "python3 /home/sutripa/effector_prediction_pipeline-main/signalp_result_processing.py {input.sig}"
+#  Prediction of the topology of both alpha-helical and beta-barrel transmembrane proteins for proteins with predicted signal peptide in xaa, xab and xac files
+rule TM_prediction:
+    input:
+        "seq_translated_summary.fa",
+    output:
+        "tmhmm_out.gff3"
+    shell:
+        "tmhmm2 {input} > {output}" 
+# Retrieval of the sequence Ids of the protein sequences that are without transmembrane region in the merged file of xaa, xab and xac
+rule script_to_extract_proteinids_without_TM:
+    input:
+        "tmhmm_out.gff3",
+        processing_script="/home/sutripa/effector_prediction_pipeline-main/command_to_process_biolib_tmhmm_file.sh"
+    output:
+        "tmp3"
+    shell:
+        "sh {input.processing_script} > {output}"
+# Retrieval of the correspoding protein sequences that are without transmembrane region
+rule script_to_extract_protein_seq_without_TM:
+    input:
+        "seq_translated_summary.fa",
+        "tmp3",
+    output:
+        "output.fa"
+    shell:
+        "python3 tmhmm_result_processing.py"
+# Prediction of the presence of N-terminal presequences: signal peptide (SP), mitochondrial transit peptide (mTP), chloroplast transit peptide (cTP) or thylakoid luminal transit peptide (lTP)
+rule targetp:
+    input:
+        "output.fa"
+    output:
+        "output_summary.targetp2"
+    shell:
+        "/home/sutripa/targetp-2.0/bin/targetp -fasta {input} -org non-pl -format short"
+# Retrieval of the sequence Ids and corresponding protein sequences that have 'SP'in targetP output summary file 
+rule targetP_result_processing:
+    input:
+        "output_summary.targetp2",         
+         processing_script1="/home/sutripa/effector_prediction_pipeline-main/targetp_result_processing.sh"
+    output:
+        "output_summary_targetp.fa"
+    shell:
+        "sh {input.processing_script1} > {output}"
+# Motif-independent prediction of effector proteins
+rule effector_prediction:
+    input:
+        "output_summary_targetp.fa"
+    output:
+        "predicted_effector.fasta"
+    shell:
+        "EffectorP3.py -i {input} -E {output}"
+# Motif prediction
+rule RXLR_CRN_WYL:
+    input:
+        "predicted_effector.fasta"
+    output:
+        config["output_files"]
+#Give the hmm model with path    
+    run:
+        shell ("hmmsearch /home/sutripa/hm_models/RXLR/RxLR_PF16810.hmm {input} > {output[0]}")
+        shell ("hmmsearch /home/sutripa/hm_models/WYL/WYL_PF18488.hmm {input} > {output[1]}") 
+        shell ("hmmsearch /home/sutripa/hm_models/CRN/CRN_PF20147.hmm {input} > {output[2]}")
