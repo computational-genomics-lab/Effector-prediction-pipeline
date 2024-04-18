@@ -1,22 +1,17 @@
 #!/bin/bash
 
-# Iterate through all .fna files in the directory
-for fna_file in *.fna; do
-    # Extract the basename of the fna file
-    basename=$(basename "$fna_file" .fna)
+# Specify the list of input files
+input_files=["contig_1.txt" "contig_2.txt"]
 
-    # Write to io_config.yaml
-    echo "input_file: [$basename.fna]" > io_config.yaml
-    echo "output_file: [$basename.predicted_effector.fasta]" >> io_config.yaml
-
-    #remove pre-existing files, if they exist
-    rm "$basename.predicted_effector.fasta" seq_translated.* seq_translated_summary.* tmhmm_out* output.*    
-# Run Snakemake
-    snakemake --snakefile effector_prediction --core 40
+# Loop over each input file and run Snakemake
+for input_files in "${input_files[@]}"; do
+    echo "Running Snakemake for $input_file"
     
-    rm -rf $basename    
-    mkdir $basename 
-    mv "$basename.predicted_effector.fasta" seq_translated.* seq_translated_summary.* tmhmm_out* output.* $basename 
+    # Run Snakemake with the current input file
+    snakemake --snakefile effector_prediction_new1 --config input_file="$input_file" --cores 30
 
+    # Add any other Snakemake options or parameters as needed
+    
+    echo "Done with $input_file"
+    echo "---------------------------------"
 done
-

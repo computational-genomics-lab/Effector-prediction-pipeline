@@ -1,0 +1,2 @@
+input_file: [contig_1.txt]
+output_files: [RxLR_HMM.out,WYL_HMM.out,CRN_HMM.out]
