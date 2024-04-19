@@ -15,6 +15,7 @@ using DeepTMHMM of biolib
 10. Retrieval of the corresponding protein sequences that are without transmembrane region using the code 'tmhmm_result_processing.py' from the predicted translated product obtained in step 3
 11. Prediction of the presence of N-terminal presequences: signal peptide (SP), mitochondrial transit peptide (mTP), chloroplast transit peptide (cTP) or thylakoid luminal transit peptide (lTP) using 'targetp' tool in the predicted proteins without transmembrane region found in step 10 and the output will be written with the flag '-mature'
 12. Motif-independent prediction of the effector proteins will be performed on the file obtained from step 11 using oomycete-effector-prediction package with the program 'predict_effectors1.py' along with its pathname, for example: '/home/sutripa/software/oomycete-effector-prediction/machine_learning_classification/scripts/predict_effectors1.py'
+13. The predicted effector proteins can be classified as RXLR/CRN/WYL effectors using Hidden Markov Model based search algorithm 
 
 # Software/package/tool required to install
 
