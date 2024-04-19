@@ -29,6 +29,7 @@ using DeepTMHMM of biolib
 8. command_to_process_biolib_tmhmm_file.sh
 9. tmhmm_result_processing.py
 11. 'oomycete-effector-prediction' package
+12. hmmsearch
 
 # command to run the pipeline
 
